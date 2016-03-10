@@ -1,0 +1,2 @@
+# svg-slider
+POC
