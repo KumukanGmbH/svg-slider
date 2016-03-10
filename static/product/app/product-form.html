@@ -1,0 +1,236 @@
+<div class="modal-header">
+    <h3 class="modal-title">{{ title }}</h3>
+</div>
+<div class="modal-body">
+
+  <div class="row" ng-if="product.uuid">
+    <div class="col-md-12">
+      <a target="_NEW" ng-href="https://www.manualone.com/product/{{ product.uuid }}">View On Site</a>
+    </div>
+  </div>
+
+  <form ng-submit="Submit()" name="form" >
+    <formly-form model="product" fields="fields" options="options" form="form"></formly-form>
+  </form>
+
+  <!-- Segment attributes -->
+  <div id="segments" ng-if="product.fake_group.id" class="col-md-12 clearfix">
+
+    <div class="row">
+      <div class="col-xs-6">
+        <h3>Segment &amp; Features</h3>
+      </div>
+      <div class="col-xs-6">
+        <button class="btn btn-success btn-sm"
+                ng-click="AddSegment()">
+                  <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="row" ng-repeat="segment in product.segments track by $index">
+
+        <div class="col-md-12 page-header">
+
+          <div class="col-md-6">
+
+            <select
+              ng-hide="segment.id"
+              ng-change="UpdateSegment(segment, $index)"
+              ng-model="segment"
+              required="true"
+              ng-options="option.name for option in available_segments | SegmentFilter:option.name:this track by option.id">
+            </select>
+
+            <span ng-if="segment.id">
+              <h3>{{ segment.name }}</h3>
+            </span>
+          </div>
+
+          <div class="col-md-6">
+            <button class="btn btn-danger btn-sm" ng-click="RemoveSegment($index)"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span></button>
+          </div>
+
+        </div>
+
+        <div class="col-md-12" ng-if="segment.id" ng-repeat="feature in segment.features track by $index" style="margin:10px 0px;">
+            <div class="col-md-6">
+              <b>{{ feature.name }}</b>
+            </div>
+
+            <div class="col-md-6">
+              <input class="feature_value" type="text" ng-model="feature.value" name="" placeholder="Enter Feature Value"/>
+            </div>
+        </div>
+
+    </div>
+  </div>
+
+  <div class"row" ng-if="product.uuid">
+    <div class="col-xs-12 clearfix">
+      <div class="col-md-12 page-header">
+        <h3>Manual</h3>
+      </div>
+
+      <div class="item row" style="padding:10px 0px 30px 0px;" ng-repeat="manual in product.manuals track by $index">
+        <div class="col-xs-4">
+            <a href="{{ manual.url }}" target="_blank">
+              <img ng-src="{{ manual.thumbnail['1x'] }}"
+                   class="img-responsive shadow"
+                   alt="PDF-Dokument"
+                   title="PDF-Dokument" />
+            </a>
+        </div>
+        <div class="col-xs-8">
+            <h4><a href="{{ manual.url }}" target="_blank">{{ manual.name }}</a></h4>
+            <div>Dokument</div>
+            <div>{{ manual.filesize }}.bytes</div>
+        </div>
+      </div><!--//item-->
+
+      <div class="item row" style="">
+        <div class="col-xs-12">
+
+          <input type="file"
+                 ng-model="upload_manual"
+                 accept="application/pdf"
+                 base-sixty-four-input
+                 onloadend="FileLoadedHandler"
+                 onprogress="FileProgressHandler"
+                 onerror="FileErrorHandler" />
+
+          <div ng-show="upload_manual.filetype">
+            <formly-form
+                model="upload_manual"
+                fields="manual_form_fields"
+                form="manual_form">
+            </formly-form>
+          </div>
+
+      </div>
+
+    </div>
+
+    <div class="col-xs-12 clearfix">
+      <div class="col-md-12 page-header">
+        <h3>Product Images</h3>
+      </div>
+
+      <div class="item row" style="padding:10px 0px 0px 0px;">
+        <div class="col-xs-4" ng-repeat="image in product.images track by $index">
+
+              <img ng-src="{{ image['1x'] }}"
+                   class="img-responsive shadow"
+                   alt="Image"
+                   title="Image" />
+
+        </div>
+      </div><!--//item-->
+
+      <div class="col-sm-4">
+        <input type="file"
+               ng-model="upload_image"
+               accept="image/jpeg,image/png"
+               base-sixty-four-input
+               onloadend="FileLoadedHandler"
+               onprogress="FileProgressHandler"
+               onerror="FileErrorHandler" />
+      </div>
+
+      <div class="col-sm-4">
+        <img ng-src="data:{{ upload_image.filetype }};base64,{{ upload_image.base64 }}" class="img img-responsive" ng-if="upload_image">
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="modal-footer">
+    <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
+    <button type="submit" class="btn btn-primary submit-button" ng-disabled="form.$invalid" ng-click="Submit()">Submit</button>
+</div>
+
+
+<script type="text/ng-template" id="error-messages.html">
+  <formly-transclude></formly-transclude>
+  <div ng-messages="fc.$error" ng-if="form.$submitted || options.formControl.$touched" class="error-messages">
+    <div ng-message="{{ ::name }}" ng-repeat="(name, message) in ::options.validation.messages" class="message">{{ message(fc.$viewValue, fc.$modelValue, this)}}</div>
+  </div>
+</script>
+
+<script type="text/ng-template" id="async-ui-select-type.html">
+  <ui-select ng-model="model[options.key]" formly-custom-validation="options.validators" theme="bootstrap">
+    <ui-select-match placeholder="{{to.placeholder}}">{{$select.selected[to.labelProp || 'name']}}</ui-select-match>
+    <ui-select-choices repeat="option in to.options | filter: $select.search"
+                       refresh="to.refresh($select.search, options)"
+                       refresh-delay="{{to.refreshDelay}}">
+      <div ng-bind-html="option[to.labelProp || 'name'] | highlight: $select.search"></div>
+    </ui-select-choices>
+  </ui-select>
+</script>
+
+<style>
+#segments h3 {
+  margin-top:0px;
+}
+.dl-horizontal dt {
+  width:220px;
+}
+.list-group-item-heading input {
+  font-size: 1.4em;
+}
+.list-group-item-text .fieldset input {
+  color:#3d3d3d;
+}
+.feature_name {
+  width:63%;
+}
+
+/* Formly */
+.formly-field {
+  margin-bottom: 26px;
+}
+
+.error-messages {
+  position: relative;
+}
+
+.error-messages, .message {
+  opacity: 1;
+  transition: .3s linear all;
+}
+
+.message {
+  font-size: .8em;
+  position: absolute;
+  width: 100%;
+  color: #a94442;
+  margin-top: 2px;
+}
+
+.error-messages.ng-enter.ng-enter-active,
+.message.ng-enter.ng-enter-active {
+  opacity: 1;
+  top: 0;
+}
+
+.error-messages.ng-enter,
+.message.ng-enter {
+  opacity: 0;
+  top: -10px;
+}
+
+.error-messages.ng-leave,
+.message.ng-leave {
+  opacity: 1;
+  top: 0;
+}
+
+.error-messages.ng-leave-active,
+.message.ng-leave-active {
+  opacity: 0;
+  top: -10px;
+}
+.border {
+  border:solid #c00 1px;
+}
+</style>
